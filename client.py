@@ -101,111 +101,87 @@ def tcp_app_client():
     print("For Avengers-InfinityWar write 2")
     print("For Avengers-FirstAvenger write 3")
 
-    while True:
-        input_choice = input("APP which poster movie do you want? pick 1 to 3! ")
 
-        # Sending the request to the app_server
-        tcp_client_socket.send(input_choice.encode("utf-8"))
-        print("sent the request to the app_server")
+    input_choice = input("APP which poster movie do you want? pick 1 to 3! ")
 
-        url_response_server = tcp_client_socket.recv(4096).decode("utf-8")
-        print(url_response_server)
-        print("Got the response from the app_server")
+    # Sending the request to the app_server
+    tcp_client_socket.send(input_choice.encode("utf-8"))
+    print("sent the request to the app_server")
 
-        if input_choice == "1":
-            # Send an HTTP request to the URL and get the response object
-            response = requests.get(url_response_server, allow_redirects=True)
+    url_response_server = tcp_client_socket.recv(4096).decode("utf-8")
+    print(url_response_server)
+    print("Got the response from the app_server")
 
-            print(f"The status code is: {response.status_code}")
+    if input_choice == "1":
+        # Send an HTTP request to the URL and get the response object
+        response = requests.get(url_response_server, allow_redirects=True)
 
-            # check if the image have been moved temporality to a diffrent URL
-            if response.status_code == 302:
-                new_url = response.headers['Location']
-                response = requests.get(new_url)
+        print(f"The status code is: {response.status_code}")
 
-            # Check if the request was successful (HTTP status code 200)
-            if response.status_code == 200:
-                # Open a local file with wb (write binary) permission.
-                with open("EndGame.jpg", "wb") as file:
-                    # Write the contents of the response to the file.
-                    file.write(response.content)
-                    print("Image downloaded successfully.")
-                    img = Image.open('EndGame.jpg')
-                    img.show()
-            else:
-                print(f"Failed to download image. HTTP status code: {response.status_code}")
+        # check if the image have been moved temporality to a diffrent URL
+        if response.status_code == 302:
+            new_url = response.headers['Location']
+            response = requests.get(new_url)
 
+        # Check if the request was successful (HTTP status code 200)
+        elif response.status_code == 200:
+            # Open a local file with wb (write binary) permission.
+            with open("EndGame.jpg", "wb") as file:
+                # Write the contents of the response to the file.
+                file.write(response.content)
+                print("Image downloaded successfully.")
+                img = Image.open('EndGame.jpg')
+                img.show()
+        else:
+            print(f"Failed to download image. HTTP status code: {response.status_code}")
 
+    elif input_choice == "2":
 
-            # with open("EndGame.jpg", "wb") as file:
-            #     # Write the contents of the response to the file.
-            #     file.write(response)
-            #     print("Image downloaded successfully.")
-            #     img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/EndGame.jpg')
-            #     img.show()
+        # Send an HTTP request to the URL and get the response object
+        response = requests.get(url_response_server, allow_redirects=True)
 
-        if input_choice == "2":
+        print(f"The status code is: {response.status_code}")
 
-            # Send an HTTP request to the URL and get the response object
-            response = requests.get(url_response_server, allow_redirects=True)
+        # check if the image have been moved temporality to a diffrent URL
+        if response.status_code == 302:
+            new_url = response.headers['Location']
+            response = requests.get(new_url)
 
-            print(f"The status code is: {response.status_code}")
+        # Check if the request was successful (HTTP status code 200)
+        elif response.status_code == 200:
+            # Open a local file with wb (write binary) permission.
+            with open("InfinityWar.jpg", "wb") as file:
+                # Write the contents of the response to the file.
+                file.write(response.content)
+                print("Image downloaded successfully.")
+                img = Image.open('InfinityWar.jpg')
+                img.show()
+        else:
+            print(f"Failed to download image. HTTP status code: {response.status_code}")
 
-            # check if the image have been moved temporality to a diffrent URL
-            if response.status_code == 302:
-                new_url = response.headers['Location']
-                response = requests.get(new_url)
+    elif input_choice == "3":
 
-            # Check if the request was successful (HTTP status code 200)
-            if response.status_code == 200:
-                # Open a local file with wb (write binary) permission.
-                with open("InfinityWar.jpg", "wb") as file:
-                    # Write the contents of the response to the file.
-                    file.write(response.content)
-                    print("Image downloaded successfully.")
-                    img = Image.open('InfinityWar.jpg')
-                    img.show()
-            else:
-                print(f"Failed to download image. HTTP status code: {response.status_code}")
+        # Send an HTTP request to the URL and get the response object
+        response = requests.get(url_response_server, allow_redirects=True)
 
-        if input_choice == "3":
+        print(f"The status code is: {response.status_code}")
 
-            # Send an HTTP request to the URL and get the response object
-            response = requests.get(url_response_server, allow_redirects=True)
+        # check if the image have been moved temporality to a diffrent URL
+        if response.status_code == 302:
+            new_url = response.headers['Location']
+            response = requests.get(new_url)
 
-            print(f"The status code is: {response.status_code}")
-
-            # check if the image have been moved temporality to a diffrent URL
-            if response.status_code == 302:
-                new_url = response.headers['Location']
-                response = requests.get(new_url)
-
-            # Check if the request was successful (HTTP status code 200)
-            if response.status_code == 200:
-                # Open a local file with wb (write binary) permission.
-                with open("Ultron.jpg", "wb") as file:
-                    # Write the contents of the response to the file.
-                    file.write(response.content)
-                    print("Image downloaded successfully.")
-                    img = Image.open('Ultron.jpg')
-                    img.show()
-            else:
-                print(f"Failed to download image. HTTP status code: {response.status_code}")
-
-
-        decide_input = input("do you want to keep going or to exit? for exit write e , for keep going write k: ")
-
-        while decide_input != "e" and decide_input != "k":
-            decide_input = input("do you want to keep going or to exit? for exit write e , for keep going write k: ")
-            if decide_input == "e" or decide_input == "k":
-                break
-
-        if decide_input == "e":
-            print("Client decide to exit")
-            break
-        if decide_input == "k":
-            print("APP what else do you want to get? remember to pick between 1-3: ")
-            continue
+        # Check if the request was successful (HTTP status code 200)
+        elif response.status_code == 200:
+            # Open a local file with wb (write binary) permission.
+            with open("Ultron.jpg", "wb") as file:
+                # Write the contents of the response to the file.
+                file.write(response.content)
+                print("Image downloaded successfully.")
+                img = Image.open('Ultron.jpg')
+                img.show()
+        else:
+            print(f"Failed to download image. HTTP status code: {response.status_code}")
 
     tcp_client_socket.close()
 
@@ -294,14 +270,13 @@ def udp_client():
 
 # main
 if __name__ == "__main__":
-    #dhcp_discover()
-    #got_dhcp_offer()
-    #got_dhcp_ack()
+    dhcp_discover()
+    got_dhcp_offer()
+    got_dhcp_ack()
 
-    #dns_socket()
+    dns_socket()
 
-    #tcp_app_client()
+    tcp_app_client()
 
-    udp_client()
+    #udp_client()
 
-    #udp_app_client()
