@@ -86,6 +86,7 @@ def dns_socket():
     dns_sock.close()
 
 
+
 def tcp_app_client():
 
     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -129,7 +130,7 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/EndGame.jpg')
+                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/EndGame.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
@@ -162,21 +163,10 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/InfinityWar.jpg')
+                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/InfinityWar.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
-
-
-
-
-
-            # with open("InfinityWar.jpg", "wb") as file:
-            #     # Write the contents of the response to the file.
-            #     file.write(response)
-            #     print("Image downloaded successfully.")
-            #     img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/InfinityWar.jpg')
-            #     img.show()
 
         if input_choice == "3":
 
@@ -197,7 +187,7 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/Ultron.jpg')
+                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/Ultron.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
@@ -234,47 +224,105 @@ def authentication_check(sock):
         print("The request didn't Got fully to the server")
         return 0
 
+
+
+
 def udp_client():
 
     # Configure the server address and port number
-    server_address = '127.0.0.1'
-    server_port = 20529
+    app_address = '127.0.0.1'
+    app_port = 20529
 
     # Create a UDP socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.bind(("127.0.0.1", 20530))
+    client_socket.setblocking(True)
+    client_socket.settimeout(5)
 
     print("hello! which phone do you want to get:")
     input_choice = input("Iphone or Android? ")
 
     if input_choice == "Iphone":
         mod_choice = input("which model do you like? Iphone 14 or Iphone 13?")
-    #
-    #     if mod_choice == "iphone 14":
-    #         # client_socket.sendto(mod_choice.encode("utf-8"), (server_address, server_port))
-    #         # print("Sent to the Application the request")
-    #
-    #         # Got a ack from the server if he got that
-    #
-    #     if mod_choice == "iphone 13":
-    #         # client_socket.sendto(mod_choice.encode("utf-8"), (server_address, server_port))
-    #         # print("Sent to the Application the request")
-    #
-    #     else:
-    #         print("Its out of stock!!")
 
     if input_choice == "Android":
         mod_choice = input("which model do you like? Galaxy S23 or Galaxy S22? ")
 
-
-    client_socket.sendto(mod_choice.encode("utf-8"), (server_address, server_port))
+    client_socket.sendto(mod_choice.encode("utf-8"), (app_address, app_port))
     print("Sent to the Application the request")
+
+    # segemnts is a dictionery because we don't know the order that the segments received in the application
+    segments = {}
+
+    # -1 is like infinty we do it because we don't know how much segments will receive
+    last_segment = -1
+
+    while last_segment == -1 or len(segments) <= last_segment:
+        try:
+            segment_packet = client_socket.recvfrom(4096)[0]
+            segment_packet = segment_packet.decode()
+        except socket.error:
+            continue
+
+        tag, seq_num_as_str, segment = segment_packet.split(',', 3)
+        seq_num = int(seq_num_as_str)
+
+        ack_packet = str(seq_num)
+
+        client_socket.sendto(ack_packet.encode(), (app_address, app_port))
+
+        if seq_num not in segments:
+            segments[seq_num] = segment
+            print("Get segment number " + str(seq_num))
+
+        if tag == "E":
+            last_segment = seq_num
+
+    data = ""
+    for i in range(last_segment + 1):
+        data += segments[i]
+
+    print(data)
+
+
+    # segment_size = 5
+    # byte_send = 0
+    # segment_count = len(mod_choice)
+    #
+    # if segment_count%segment_size == 0:
+    #     segment_count = int(segment_count / segment_size)
+    # else:
+    #     segment_count = int(segment_count/segment_size)+1
+    #
+    # while seq_number < segment_count:
+    #
+    #     # request contain the model that the client selected and the seq number of the packet
+    #     request = str(window_size) + ',' + str(seq_number) + ',' + mod_choice[segment_size*seq_number:segment_size*(seq_number+1)]
+    #
+    #     client_socket.sendto(request.encode("utf-8"), (server_address, server_port))
+    #     print("Sent to the Application the request")
+    #
+    #     checking_ack = client_socket.recvfrom(4096)
+    #
+    #     client_socket.settimeout(10)
+    #     try:
+    #         if checking_ack == "ACK":
+    #             print("Got ACK!")
+    #             seq_number += 1
+    #         else:
+    #             print("Got NACK")
+    #             client_socket.sendto(request, (server_address, server_port))
+    #             print("Sent the request again")
+    #     except socket.timeout:
+    #         print("timeout")
+
+
 
     # # AuthenticationCheck
     # authentication= authentication_check(client_socket)
     # if authentication == 0:
 
-    response_from_app = client_socket.recvfrom(4096)
-    url_response_server = response_from_app[0].decode("utf-8")
+    url_response_server = data
 
     # Send an HTTP request to the URL and get the response object
     response = requests.get(url_response_server, allow_redirects=True)
@@ -293,18 +341,13 @@ def udp_client():
             # Write the contents of the response to the file.
             file.write(response.content)
             print("Image downloaded successfully.")
-            img = Image.open('/home/matan/PycharmProjects/RN_Final_Project/Image.jpg')
+            img = Image.open('Image.jpg')
             img.show()
     else:
         print(f"Failed to download image. HTTP status code: {response.status_code}")
 
 
 
-
-
-    # Send a request to the server
-    request = 'Please redirect me to the remote server'.encode()
-    client_socket.sendto(request, (server_address, server_port))
 
 def udp_app_client():
 
