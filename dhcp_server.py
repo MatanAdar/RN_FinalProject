@@ -6,41 +6,56 @@ from scapy.layers.dhcp import DHCP, BOOTP
 from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
 
-global dhcp_ip, end_ip, ips_in_used, find_unused_ip_for_client, offer_client_ip
+global dhcp_ip, END_IP, ips_in_used, offer_client_ip
 dhcp_ip = "10.0.0.1"
-end_ip= 0
-ips_in_used=["10.0.2.15"]
+END_IP = 0
+ips_in_used = ["10.0.2.15"]
+
+
+# checking if the ip is already in used or if there is no more ips available
+def get_unused_ip():
+    """
+    Returns an unused IP address for a client to use.
+    """
+    #End_IP - find what number in the end of the ip can we append to the start of that ip that unused already
+    # ips_in_used - array of all the ips that already in used
+    global END_IP, ips_in_used
+
+    # Check if there are any more IPs available to use
+    # if there is no more ips to use we make the ip to "0.0.0.0"
+    if END_IP == 255:
+        print("Cant make more ips")
+        return "0.0.0.0"
+
+    # Find an unused IP address
+    while True:
+        ip = f"10.0.2.{END_IP}"
+        if ip not in ips_in_used:
+            END_IP += 1
+            print(f"Found that ip {ip} is not in use")
+            print(f"Offering the client this ip: {ip}")
+            return ip
+        else:
+            print("the ip:", ip, "in use already")
+            END_IP += 1
 
 
 # Define a function to handle DHCP requests
 def got_dhcp_discover():
 
-    global end_ip, find_unused_ip_for_client, ips_in_used
+    global END_IP, ips_in_used
 
     pkt = sniff(filter="udp and port 67", count=1, iface="enp0s3")[0]
 
     if DHCP in pkt and pkt[DHCP].options[0][1] == 1:
         print("DHCP Discover received")
 
-        # checking if the ip is in use already or if there is no more ips available
-        find_unused_ip_for_client = "10.0.2."+str(end_ip)  # check if to change this to a diffrent way(maybe with random)???
-        while find_unused_ip_for_client in ips_in_used:
-            # the list that the server have to keep up what ips is in use (ips_in_used)
-            print("the ip:", find_unused_ip_for_client, "in use already")
-            end_ip += 1
-            if end_ip == 255:
-                print("we cant make anymore ip's")
-                end_ip = 0
-                find_unused_ip_for_client = "0.0.0.0"  # if there is no more available ips with the 10.0.5. we make the client ip back to 0.0.0.0
-                break
-            find_unused_ip_for_client = "10.0.2."+str(end_ip)  # update the client ip with +1 in the end_ip to check if it not in the ips
-
-        # after we found an unused ip to give to the client
+        # we found an unused ip to give to the client in the help func 'get_unused_ip()'
         global offer_client_ip
-        offer_client_ip = find_unused_ip_for_client
+        offer_client_ip = get_unused_ip()
 
         # Craft DHCP Offer and offer the client ip to the client that the server find
-        dhcp_offer1 = Ether(dst="ff:ff:ff:ff:ff:ff", src="4a:e4:66:e8:7a:00") / \
+        dhcp_offer1 = Ether(dst="ff:ff:ff:ff:ff:ff", src=get_if_hwaddr("enp0s3")) / \
                       IP(src="0.0.0.0", dst="255.255.255.255") / \
                       UDP(sport=67, dport=68) / \
                       BOOTP(op=2, yiaddr=offer_client_ip, siaddr="10.0.0.1", giaddr="0.0.0.0", chaddr=pkt[Ether].src, xid=pkt[BOOTP].xid) / \
@@ -72,7 +87,7 @@ def dhcp_ack():
         ips_in_used.append(offer_client_ip)
 
         # Craft DHCP Ack
-        dhcp_ack1 = Ether(dst="ff:ff:ff:ff:ff:ff", src="4a:e4:66:e8:7a:00") / \
+        dhcp_ack1 = Ether(dst="ff:ff:ff:ff:ff:ff", src=get_if_hwaddr("enp0s3")) / \
                     IP(src="0.0.0.0", dst="255.255.255.255") / \
                     UDP(sport=67, dport=68) / \
                     BOOTP(op=2, yiaddr=pkt[BOOTP].yiaddr, siaddr="10.0.0.1", giaddr="0.0.0.0",

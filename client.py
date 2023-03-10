@@ -25,7 +25,7 @@ def dhcp_discover():
     sendp(dhcp_discover1)
 
 
-# Define a function to handle DHCP responses
+# Function to handle DHCP responses
 def got_dhcp_offer():
 
     global client_ip_from_server
@@ -274,9 +274,9 @@ if __name__ == "__main__":
     got_dhcp_offer()
     got_dhcp_ack()
 
-    dns_socket()
+    #dns_socket()
 
-    tcp_app_client()
+    #tcp_app_client()
 
     #udp_client()
 
