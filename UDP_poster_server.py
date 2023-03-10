@@ -5,16 +5,16 @@ list_of_uml = {}
 
 
 # need to check how to make it that the objects will be already in the file
-def second_server_app():
+def img_server_app():
 
-    second_server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    second_server_socket.bind(("127.0.0.1", 30553))
-    second_server_socket.setblocking(True)
-    second_server_socket.settimeout(5)
+    img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    img_server_socket.bind(("127.0.0.1", 30553))
+    img_server_socket.setblocking(True)
+    img_server_socket.settimeout(5)
 
     while True:
         try:
-            request, app_addr = second_server_socket.recvfrom(4096)
+            request, app_addr = img_server_socket.recvfrom(4096)
             break
         except socket.error:
             print("error")
@@ -27,31 +27,31 @@ def second_server_app():
     if request == "Iphone 14":
         # get the img from the func get_image_EndGame
         url_iphone14 = Get_Image_Iphone14()
-        second_server_socket.sendto(url_iphone14.encode("utf-8"), app_addr)
+        img_server_socket.sendto(url_iphone14.encode("utf-8"), app_addr)
         print("Sent the file to the app server")
 
     elif request == "Iphone 13":
         # get the img from the func get_image_InfinityWar
         url_iphone13 = Get_Image_Iphone13()
-        second_server_socket.sendto(url_iphone13.encode("utf-8"), app_addr)
+        img_server_socket.sendto(url_iphone13.encode("utf-8"), app_addr)
         print("Sent the file to the app server")
 
     elif request == "Galaxy S23":
         # get the img from the func get_image_ultron
         url_GalaxyS23 = Get_Image_GalaxyS23()
-        second_server_socket.sendto(url_GalaxyS23.encode("utf-8"), app_addr)
+        img_server_socket.sendto(url_GalaxyS23.encode("utf-8"), app_addr)
         print("Sent the file to the app server")
 
     elif request == "Galaxy S22":
         # get the img from the func get_image_ultron
         url_GalaxyS22 = Get_Image_GalaxyS22()
-        second_server_socket.sendto(url_GalaxyS22.encode("utf-8"), app_addr)
+        img_server_socket.sendto(url_GalaxyS22.encode("utf-8"), app_addr)
         print("Sent the file to the app server")
 
     else:
         print("the object that you ask for, isn't here")
 
-    second_server_socket.close()
+    img_server_socket.close()
 
 
 def Get_Image_Iphone14():
@@ -83,4 +83,4 @@ def Get_Image_GalaxyS22():
 
 
 if __name__ == "__main__":
-    second_server_app()
+    img_server_app()

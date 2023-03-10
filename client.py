@@ -130,7 +130,7 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/EndGame.jpg')
+                    img = Image.open('EndGame.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
@@ -163,7 +163,7 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/InfinityWar.jpg')
+                    img = Image.open('InfinityWar.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
@@ -187,7 +187,7 @@ def tcp_app_client():
                     # Write the contents of the response to the file.
                     file.write(response.content)
                     print("Image downloaded successfully.")
-                    img = Image.open('/home/matan/PycharmProjects/RN_FinalProject/Ultron.jpg')
+                    img = Image.open('Ultron.jpg')
                     img.show()
             else:
                 print(f"Failed to download image. HTTP status code: {response.status_code}")
@@ -208,23 +208,6 @@ def tcp_app_client():
             continue
 
     tcp_client_socket.close()
-
-
-def authentication_check(sock):
-
-    # checking if the request that we sent got fully to the server
-    Authentication_Check = 1111010
-
-    check_from_server = sock.recvfrom(4096)
-
-    if check_from_server == Authentication_Check:
-        print("the request Got to the server Successfully")
-        return 1
-    else:
-        print("The request didn't Got fully to the server")
-        return 0
-
-
 
 
 def udp_client():
@@ -284,44 +267,6 @@ def udp_client():
 
     print(data)
 
-
-    # segment_size = 5
-    # byte_send = 0
-    # segment_count = len(mod_choice)
-    #
-    # if segment_count%segment_size == 0:
-    #     segment_count = int(segment_count / segment_size)
-    # else:
-    #     segment_count = int(segment_count/segment_size)+1
-    #
-    # while seq_number < segment_count:
-    #
-    #     # request contain the model that the client selected and the seq number of the packet
-    #     request = str(window_size) + ',' + str(seq_number) + ',' + mod_choice[segment_size*seq_number:segment_size*(seq_number+1)]
-    #
-    #     client_socket.sendto(request.encode("utf-8"), (server_address, server_port))
-    #     print("Sent to the Application the request")
-    #
-    #     checking_ack = client_socket.recvfrom(4096)
-    #
-    #     client_socket.settimeout(10)
-    #     try:
-    #         if checking_ack == "ACK":
-    #             print("Got ACK!")
-    #             seq_number += 1
-    #         else:
-    #             print("Got NACK")
-    #             client_socket.sendto(request, (server_address, server_port))
-    #             print("Sent the request again")
-    #     except socket.timeout:
-    #         print("timeout")
-
-
-
-    # # AuthenticationCheck
-    # authentication= authentication_check(client_socket)
-    # if authentication == 0:
-
     url_response_server = data
 
     # Send an HTTP request to the URL and get the response object
@@ -345,46 +290,6 @@ def udp_client():
             img.show()
     else:
         print(f"Failed to download image. HTTP status code: {response.status_code}")
-
-
-
-
-def udp_app_client():
-
-     # Configure the server address and port number
-    server_address = '127.0.0.1'
-    server_port = 20529
-
-    # Create a UDP socket
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    # Send a request to the server
-    request = 'Please redirect me to the remote server'.encode()
-    client_socket.sendto(request, (server_address, server_port))
-
-    # Receive the redirect response from the server
-    redirect_response, server_address = client_socket.recvfrom(1024)
-
-    print('Received redirect response from server at {}:{}'.format(server_address[0], server_address[1]))
-
-    # Parse the IP address and port number of the remote server from the redirect response
-    remote_server_address, remote_server_port = redirect_response.decode().split(':')
-
-    print('Connecting to remote server at {}:{}'.format(remote_server_address, remote_server_port))
-
-    # Connect to the remote server and download the file
-    remote_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    remote_server_socket.connect((remote_server_address, int(remote_server_port)))
-    remote_server_socket.sendall('Please send me the file'.encode())
-
-    with open('file.txt', 'wb') as f:
-        while True:
-            data = remote_server_socket.recv(1024)
-            if not data:
-                break
-            f.write(data)
-
-    print('File downloaded from remote server')
 
 
 # main
