@@ -1,7 +1,7 @@
 import socket
 
 
-def img_server_app():
+def img_server_udp():
 
     # ***********************************************************************************************
 
@@ -9,10 +9,15 @@ def img_server_app():
     # creating a socket and receiving the request from the app
 
     img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # making that the addr will not say "the addr is already in use"
+    img_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     img_server_socket.bind(("127.0.0.1", 30553))
     img_server_socket.listen(5)
     img_server_socket.setblocking(True)
     img_server_socket.settimeout(5)
+
     connection_socket, app_addr = img_server_socket.accept()
     print(f"connected to server {app_addr}")
 
@@ -102,4 +107,4 @@ def Get_Image_GalaxyS22():
 
 
 if __name__ == "__main__":
-    img_server_app()
+    img_server_udp()

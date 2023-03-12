@@ -9,9 +9,14 @@ def udp_server():
     # ************************************************************************************************
 
     # 1
-    # creating sockets and receiving from client the request and doing the 3 handshake with him(sending acks)
+    # creating UDP socket between app and client and TCP socket between app and server
+    # and receiving from client the request and doing the 3 handshake with him(sending acks)
 
     udp_app_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # making that the addr will not say "the addr is already in use"
+    udp_app_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     udp_app_socket.bind((APP_ADDRESS, PORT))
 
     udp_app_socket.setblocking(True)

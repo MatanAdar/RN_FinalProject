@@ -1,24 +1,37 @@
 import socket
 
-PORT = 80
-SERVER_ADDRESS = "127.0.0.1"
 
+def tcp_app():
 
-def tcp_server():
+    # ************************************************************************************************
 
-    tcp_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # 1
+    # creating TCP sockets
 
-    tcp_server_socket.bind((SERVER_ADDRESS, PORT))
+    port = 20529
+    server_address = "127.0.0.1"
 
-    tcp_server_socket.listen(5)
+    tcp_app_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # making that the addr will not say "the addr is already in use"
+    tcp_app_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    tcp_app_socket.bind((server_address, port))
+
+    tcp_app_socket.listen(5)
 
     # open a connection to the second server that have the object
-    second_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    second_server_socket.connect(("127.0.0.1", 30553))
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect(("127.0.0.1", 30553))
 
     while True:
-        connection_socket, addr = tcp_server_socket.accept()
+        connection_socket, addr = tcp_app_socket.accept()
         print(f"connected to server {addr}")
+
+        # *****************************************************************************************************
+
+        # 2
+        # receiving from client the request and sending this request to the server
 
         request = connection_socket.recv(4096).decode("utf-8")
 
@@ -30,22 +43,29 @@ def tcp_server():
         print("i will connect to this server")
 
         # Sending the request to the second server
-        second_server_socket.send(request.encode("utf-8"))
+        server_socket.send(request.encode("utf-8"))
         print("Sent the request to the second server")
 
-        response = second_server_socket.recv(4096)
+        # *****************************************************************************************************
+
+        # 3
+        # receiving the response from the server and sending this response to the client
+
+        response = server_socket.recv(4096)
         print("Got the response from the second Server")
 
         connection_socket.send(response)
         print("Sent the response to the Client")
 
-        break
+        # *****************************************************************************************************
 
-    # Closing sockets
-    second_server_socket.close()
+    # 4
+    # closing sockets (the only why the server will close if we manually close them in terminal with ctrl+c)
+    server_socket.close()
     connection_socket.close()
     tcp_server_socket.close()
 
 
+# main
 if __name__ == "__main__":
-    tcp_server()
+    tcp_app()

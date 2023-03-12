@@ -91,11 +91,11 @@ def tcp_app_client():
 
     # *************************************************************************************
     # 1
-    # creating sockets and asking what request the client want
+    # creating TCP socket and asking what request the client want
 
     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    tcp_client_socket.connect(("127.0.0.1", 80))  #the 529 in the port is the last 3 digit of the id
+    tcp_client_socket.connect(("127.0.0.1", 20529))
 
     # We are creating a request to the server to give us a link to the oceans song
     request = "I want a picture".encode("utf-8")
@@ -214,6 +214,10 @@ def udp_client():
 
     # Create a UDP socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # making that the addr will not say "the addr is already in use"
+    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     client_socket.bind(("127.0.0.1", 20530))
     client_socket.setblocking(True)
     client_socket.settimeout(5)
@@ -373,7 +377,7 @@ if __name__ == "__main__":
 
     #dns_socket()
 
-    #tcp_app_client()
+    tcp_app_client()
 
-    udp_client()
+    #udp_client()
 

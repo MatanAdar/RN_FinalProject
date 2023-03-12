@@ -50,6 +50,10 @@ def handle_dns_query(query, client_addr):
 def dns_server2():
     global dns_server_socket
     dns_server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # making that the addr will not say "the addr is already in use"
+    dns_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     dns_server_socket.bind(("127.0.0.1", 53))
 
     while True:
