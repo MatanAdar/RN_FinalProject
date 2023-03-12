@@ -190,35 +190,35 @@ def udp_server():
 
         # 3.2
         # checking if all segments have been acknowledged
-        # 3.2.1 - adding the segments that didn't get ACK yet to the segments to send array
-        # 3.2.2 - if the size of segments_to_send is 0 its mean that all the ack received array is True, and we got ACKs on all the segments we sent
-        # 3.2.3 - if there still space in chwd(window size) we send to the client the segment until the chwd get full by poping from segments to send array and counting the amount segments we're sending
+        # 3.2.1 - adding the segments that didn't get ACK yet to the segments_unacked array
+        # 3.2.2 - if the size of segments_unacked is 0 its mean that all the ack received array is True, and we got ACKs on all the segments we sent
+        # 3.2.3 - if there still space in chwd(window size) we send to the client the segments until the chwd get full by poping from segments_unacked array and counting the amount segments we're sending
         # 3.2.4 - receiving from the client the seq num segment that he got and checking if we got ACK on him already.
         # if no we're changing ack_received[seq_num] = true and lower the amount of segments we sent and didn't get ack on them yet
-        # if yes we're adding the seq_num ack to the array of dup ack to check if we get 3 dup ack to know if you need to make Fast retransmitted
+        # if yes we're adding the seq_num ack to the array of dup ack, to check if we get 3 dup ack to know if we need to make Fast retransmitted
         # if we got timeout (timeout waiting for ack) we're decreasing ssthresh to be chwd/2 and chwd to be 1
         # else we make the ssthresh to be like chwd
 
         # Check if all segments have been acknowledged
         while True:
             #  3.2.1
-            # put all the segments that we didn't got ack on them(segments that not True in the ack_received array), back in the segment_to_send array
-            # index array that keep the segments that going to send but didn't send yet
-            segments_to_send = []
+            # put all the segments that we didn't got ack on them(segments that not True in the ack_received array), back in the segment_unacked array
+            # index array that keep the segments that didn't get ack yet
+            segments_unacked = []
             for i in range(num_segments):
                 if ack_received[i] == False:
-                    segments_to_send.append(i)
+                    segments_unacked.append(i)
 
             # 3.2.2
-            if len(segments_to_send) == 0:
+            if len(segments_unacked) == 0:
                 print("received ack on every segments")
                 break
 
             # 3.2.3
             # Send new segments up to congestion window size
             count_segment_that_sending = 0
-            while count_segment_that_sending < cwnd and len(segments_to_send) > 0:
-                seq_num = segments_to_send.pop(0)
+            while count_segment_that_sending < cwnd and len(segments_unacked) > 0:
+                seq_num = segments_unacked.pop(0)
                 udp_app_socket.sendto(segments[seq_num].encode(), client_addr)
                 print("Sent segment", seq_num)
                 count_segment_that_sending += 1
@@ -256,7 +256,7 @@ def udp_server():
 
                             # adding the 3 seq_num to send again
                             for i in range(seq_num - 2, seq_num):
-                                segments_to_send.append(i)
+                                segments_unacked.append(i)
                             break
 
                     # if we got ack on this seq_num already, so we check if we get 3 dup ack and do Fast retransmit
