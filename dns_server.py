@@ -1,64 +1,76 @@
-from scapy.all import *
-import time
-from scapy.layers.dns import DNSQR, DNS, DNSRR
-from scapy.layers.inet import UDP, IP
-import threading
 import socket
+from scapy.all import *
+from scapy.layers.dns import DNS, DNSQR, DNSRR
+from scapy.layers.inet import IP, UDP
 
-global cache_of_domains
-cache_of_domains = {}
-lock = threading.Lock()
+# Function that replies to DNS query
 
-def handle_dns_query(query, client_addr):
-    domain = query.decode("utf-8")
+# Import scapy libraries
+from scapy.all import *
+from scapy.layers.l2 import Ether
 
-    print("Checking if the domain in the cache:")
-    with lock:
-        if domain not in cache_of_domains:
-            try:
-                print("The domain is NOT in the cache")
-                # get the info of the domain from the DNS server
-                info = socket.getaddrinfo(domain, 53, socket.AF_INET, socket.SOCK_DGRAM)
 
-                # found the ip in the touple
-                ip_address = info[0][4][0]
+# Set the interface to listen and respond on
+net_interface = "lo"
 
-                ip_address_to_send = ip_address.encode("utf-8")
+# Packet Filter for sniffing specific DNS packet only
+packet_filter = "udp dst port 53"       # Filter UDP port 53
 
-                # sending the ip to the client
-                dns_server_socket.sendto(ip_address_to_send, client_addr)
-                print("found the ip address from the DNS")
+# Function that replies to DNS query
+# Create a collection to serve as the cache
+dns_cache = {}
 
-                # We added to the cache the domain
-                cache_of_domains[domain] = ip_address
-                print("The domain added to the cache successfully")
+def dns_reply(packet):
 
-                print(cache_of_domains)
+    # Get the domain name from the DNS query
+    domain_name = packet[DNSQR].qname.decode('utf-8')
 
-                print("\n")
-            except socket.error as e:
-                print("The error is: %s" % e)
-                print("there is no ip for this domain! the domain not found in DNS server")
-                print("\n")
-        else:
-            print("The domain is in the cache")
-            ip_address = cache_of_domains[domain].encode("utf-8")
-            dns_server_socket.sendto(ip_address, client_addr)
-            print("send the ip_address:", ip_address.decode("utf-8"), "to the client")
-            print("\n")
+    # Check if the domain name is in the cache
+    if domain_name in dns_cache:
+        print('domain is in cache')
+        ip_address = dns_cache[domain_name]
+    else:
+        # Perform a DNS lookup for the domain name
+        dns_res = sr1(IP(dst='213.57.22.5')/UDP()/DNS(rd=1, qd=DNSQR(qname=domain_name)), verbose=0)
 
-def dns_server2():
-    global dns_server_socket
-    dns_server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Extract the IP address from the DNS response
+        ip_address = dns_res[DNSRR].rdata
 
-    # making that the addr will not say "the addr is already in use"
-    dns_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Add the IP address to the cache
+        dns_cache[domain_name] = ip_address
+        print('add domain to cache')
 
-    dns_server_socket.bind(("127.0.0.1", 53))
+    print(str(dns_cache))
+    # Construct the DNS response
+    dns_response = DNS(
+        id=packet[DNS].id,
+        qr=1,  # Response
+        aa=1,  # Authoritative Answer
+        ancount=1,  # One Answer
+        qd=packet[DNS].qd,
+        an=DNSRR(rrname=domain_name, type='A', rclass='IN', ttl=600, rdata=ip_address)
+    )
 
-    while True:
-        query, client_addr = dns_server_socket.recvfrom(4096)
-        threading.Thread(target=handle_dns_query, args=(query, client_addr)).start()
+    # Construct the UDP packet
+    udp_packet = UDP(
+        sport=packet[UDP].dport,  dport=packet[UDP].sport )
+
+    # Construct the IP packet
+    ip_packet = IP(
+        dst=packet[IP].src, src=packet[IP].dst )
+
+    # Construct the Ethernet packet
+    ether_packet = Ether(
+        dst=packet[Ether].src,  src=packet[Ether].dst)
+
+    # Put the packets together
+    response_packet = ether_packet / ip_packet / udp_packet / dns_response
+
+    # Send the DNS response
+    sendp(response_packet, iface=net_interface)
+    print('sent ip '+str(ip_address))
+
 
 if __name__ == "__main__":
-    dns_server2()
+    while True:
+        sniff(filter=packet_filter, prn=dns_reply, store=0, iface=net_interface, count=1)
