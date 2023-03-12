@@ -16,7 +16,8 @@ def img_server_udp():
     img_server_socket.bind(("127.0.0.1", 30553))
     img_server_socket.listen(5)
     img_server_socket.setblocking(True)
-    img_server_socket.settimeout(5)
+    img_server_socket.settimeout(10)
+
 
     connection_socket, app_addr = img_server_socket.accept()
     print(f"connected to server {app_addr}")
