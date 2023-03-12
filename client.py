@@ -89,6 +89,10 @@ def dns_socket():
 
 def tcp_app_client():
 
+    # *************************************************************************************
+    # 1
+    # creating sockets and asking what request the client want
+
     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     tcp_client_socket.connect(("127.0.0.1", 80))  #the 529 in the port is the last 3 digit of the id
@@ -103,6 +107,11 @@ def tcp_app_client():
 
     input_choice = input("APP which poster movie do you want? pick 1 to 3! ")
 
+    # **********************************************************************************************
+
+    # 2
+    # sending the request to the app and receiving from the app the response
+
     # Sending the request to the app_server
     tcp_client_socket.send(input_choice.encode("utf-8"))
     print("sent the request to the app_server")
@@ -110,6 +119,11 @@ def tcp_app_client():
     url_response_server = tcp_client_socket.recv(4096).decode("utf-8")
     print(url_response_server)
     print("Got the response from the app_server")
+
+    # *********************************************************************************************
+
+    # 3
+    # create the photo by the url that the app gave us
 
     if input_choice == "1":
         # Send an HTTP request to the URL and get the response object
@@ -182,10 +196,17 @@ def tcp_app_client():
         else:
             print(f"Failed to download image. HTTP status code: {response.status_code}")
 
+    # ***********************************************************************************************
+
     tcp_client_socket.close()
 
 
 def udp_client():
+
+    # ************************************************************************************************
+
+    # 1
+    # creating UDP sockets and asking what request the client want
 
     # Configure the server address and port number
     app_address = '127.0.0.1'
@@ -205,6 +226,11 @@ def udp_client():
 
     if input_choice == "Android":
         mod_choice = input("which model do you like? Galaxy S23 or Galaxy S22? ")
+
+    # ***************************************************************************************
+
+    # 2
+    # sending to the app the request and doing 3 handshake with him to see if he got the request
 
     # Send
     while True:
@@ -244,9 +270,13 @@ def udp_client():
                 continue
             break
 
+    # ***********************************************************************************************
+
+    # 3
+    # receiving the url from the app by the segments
 
     # segemnts is a dictionery because we don't know the order that the segments received in the application
-    segments = {}
+    segments_dic = {}
 
     # -1 is like infinty we do it because we don't know how much segments will receive
     last_segment = -1
@@ -259,22 +289,26 @@ def udp_client():
         except socket.error:
             continue
 
+        # spilt the segment we go to 3 things : letter , seq num and data
         letter, seq_num_from_app, segment_data = segment_packet.split(',', 3)
         seq_num = int(seq_num_from_app)
 
         ack_packet_seq_num = str(seq_num)
 
+        # Sending to the app the seq num of segment we got that the app will know what segments we got (like sending ACK)
         client_socket.sendto(ack_packet_seq_num.encode(), (app_address, app_port))
 
-        if seq_num not in segments:
-            segments[seq_num] = segment_data
+        # checking if the seq num is in the segments dic
+        if seq_num not in segments_dic:
+            segments_dic[seq_num] = segment_data
             print("Get segment number " + str(seq_num))
 
+        # Getting to know how much segments the client need to get
         if letter == "E":
             last_segment = seq_num
 
     # while to get all the packet after we got the last packet, and we know how much packet we need to get
-    while len(segments) <= last_segment:
+    while len(segments_dic) <= last_segment:
         try:
             segment_packet = client_socket.recvfrom(4096)[0]
             segment_packet = segment_packet.decode()
@@ -288,16 +322,21 @@ def udp_client():
 
         client_socket.sendto(ack_packet_seq_num.encode(), (app_address, app_port))
 
-        if seq_num not in segments:
-            segments[seq_num] = segment_data
+        if seq_num not in segments_dic:
+            segments_dic[seq_num] = segment_data
             print("Get segment number " + str(seq_num))
 
     # assemble the full data that we received from the app
     data = ""
     for i in range(last_segment + 1):
-        data += segments[i]
+        data += segments_dic[i]
 
     print(data)
+
+    # ****************************************************************************************************
+
+    # 4
+    # creating the photo by the url the app gave us
 
     url_response_server = data
 
@@ -322,6 +361,8 @@ def udp_client():
             img.show()
     else:
         print(f"Failed to download image. HTTP status code: {response.status_code}")
+
+    # *******************************************************************************************************
 
 
 # main

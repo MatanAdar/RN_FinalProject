@@ -6,6 +6,11 @@ APP_ADDRESS = "127.0.0.1"
 
 def udp_server():
 
+    # ************************************************************************************************
+
+    # 1
+    # creating sockets and receiving from client the request and doing the 3 handshake with him(sending acks)
+
     udp_app_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_app_socket.bind((APP_ADDRESS, PORT))
 
@@ -107,6 +112,11 @@ def udp_server():
             else:
                 continue
 
+        # *****************************************************************************************************
+
+        # 2
+        # sending the request to the server with TCP socket( like professor amit told us to do) and receiving the url from the server
+
         print("The model phone that the client choice is:", request_from_client)
 
         print("I dont have what you want but i know the server that have this")
@@ -120,17 +130,26 @@ def udp_server():
         url_response = response_from_server
         print("Got the response from the img Server")
 
-       # Set up Reno congestion control parameters
+        # ****************************************************************************************************
+
+        # 3
+        # sending the url in segments to the client
+        # making the UDP socket to work as RUDP socket (using CC reno and ACKS on each segment)
+
+        # *************************
+        # 3.1
+        # setting parameters and calc how much segments we need to send to the client and making them
+
+        # Set up Reno congestion control parameters
 
         cwnd = 1
         ssthresh = 16
-        # dict that keep all segements
-        segments = {}
 
 
         # Reno congestion control algorithm
         url_data = url_response.decode()
 
+        # calc the amount of segments app need to send to client to transfer all the data(url) to him
         segment_size = 5
 
         url_data_length = len(url_data)
@@ -142,10 +161,15 @@ def udp_server():
 
         num_segments = int(url_data_length / segment_size) + remind
 
+        # boolean array that tell us what seq num of segments got ot the client
         ack_received = [False] * num_segments
+        # array that keep track of the amout of ack each seq num get (for 3 dup ack)
         dup_ack_index = [0] * num_segments
 
-        # loop that fill the dictionary with seq_num and data ?????
+        # dict that keep all segments
+        segments = {}
+
+        # loop that create the segments with letter , seq num and data
         i = 0
         while i < num_segments:
             index = str(i)
@@ -157,8 +181,22 @@ def udp_server():
 
             i += 1
 
+        # **********************
+
+        # 3.2
+        # checking if all segments have been acknowledged
+        # 3.2.1 - adding the segments that didn't get ACK yet to the segments to send array
+        # 3.2.2 - if the size of segments_to_send is 0 its mean that all the ack received array is True, and we got ACKs on all the segments we sent
+        # 3.2.3 - if there still space in chwd(window size) we send to the client the segment until the chwd get full by poping from segments to send array and counting the amount segments we're sending
+        # 3.2.4 - receiving from the client the seq num segment that he got and checking if we got ACK on him already.
+        # if no we're changing ack_received[seq_num] = true and lower the amount of segments we sent and didn't get ack on them yet
+        # if yes we're adding the seq_num ack to the array of dup ack to check if we get 3 dup ack to know if you need to make Fast retransmitted
+        # if we got timeout (timeout waiting for ack) we're decreasing ssthresh to be chwd/2 and chwd to be 1
+        # else we make the ssthresh to be like chwd
+
         # Check if all segments have been acknowledged
         while True:
+            #  3.2.1
             # put all the segments that we didn't got ack on them(segments that not True in the ack_received array), back in the segment_to_send array
             # index array that keep the segments that going to send but didn't send yet
             segments_to_send = []
@@ -166,10 +204,12 @@ def udp_server():
                 if ack_received[i] == False:
                     segments_to_send.append(i)
 
+            # 3.2.2
             if len(segments_to_send) == 0:
                 print("received ack on every segments")
                 break
 
+            # 3.2.3
             # Send new segments up to congestion window size
             count_segment_that_sending = 0
             while count_segment_that_sending < cwnd and len(segments_to_send) > 0:
@@ -178,6 +218,7 @@ def udp_server():
                 print("Sent segment", seq_num)
                 count_segment_that_sending += 1
 
+            # 3.2.4
             timeout = False
             global ack_seq_num
             ack_seq_num = 0
@@ -237,7 +278,7 @@ def udp_server():
                     print("Timeout waiting for ACK")
                     timeout = True
                     break
-
+            # 3.2.5
             if timeout:
                 print("Decrease Window")
                 ssthresh = cwnd / 2
@@ -246,15 +287,16 @@ def udp_server():
                 print("Increase Window")
                 ssthresh = cwnd
 
-
     # end while
 
-    # Closing sockets
+    # ************************************************************************************************************************
+
+    # 4
+    # closing sockets (the only why the server will close if we manually close them in terminal with ctrl+c)
     img_server_socket.close()
     udp_app_socket.close()
 
-
-#def sending_data_to_client():
+    # **********************************************************************************************
 
 
 if __name__ == "__main__":

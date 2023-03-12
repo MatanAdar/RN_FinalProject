@@ -1,7 +1,12 @@
 import socket
 
-# need to check how to make it that the objects will be already in the file
+
 def img_server_app():
+
+    # ***********************************************************************************************
+
+    # 1
+    # creating a socket and receiving the request from the app
 
     img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     img_server_socket.bind(("127.0.0.1", 30553))
@@ -11,6 +16,11 @@ def img_server_app():
     connection_socket, app_addr = img_server_socket.accept()
     print(f"connected to server {app_addr}")
 
+    # *******************************************************************************
+
+    # 2
+    # receiving the request from the app and sending the url_response to the app
+
     while True:
         try:
             request = connection_socket.recv(4096)
@@ -19,10 +29,14 @@ def img_server_app():
 
         handle_request(connection_socket, request, app_addr)
 
+    # **************************************************************************************
 
+    # 3
+    # closing sockets (the only why the server will close if we manually close them in terminal with ctrl+c)
     connection_socket.close()
     img_server_socket.close()
 
+# helper function to handle the request and send exactly the url to the app
 def handle_request(connection_socket, request, app_addr):
 
     request = request.decode("utf-8")
@@ -58,28 +72,28 @@ def handle_request(connection_socket, request, app_addr):
 
 
 
-
+# helper function to get the url of the Iphone 14
 def Get_Image_Iphone14():
 
     # URL of the image to download
     url = 'https://9to5mac.com/wp-content/uploads/sites/6/2022/01/iphone-14-news-design.jpg?quality=82&strip=all'
     return url
 
-
+# helper function to get the url of the Iphone 13
 def Get_Image_Iphone13():
 
     # URL of the image to download
     url = 'https://i.ytimg.com/vi/l0EvriCfmrE/maxresdefault.jpg'
     return url
 
-
+# helper function to get the url of the Galaxy S23
 def Get_Image_GalaxyS23():
 
     # URL of the image to download
     url = 'http://johnlewis.scene7.com/is/image/JohnLewis/109920785'
     return url
 
-
+# helper function to get the url of the Galaxy S22
 def Get_Image_GalaxyS22():
 
     # URL of the image to download
