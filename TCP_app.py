@@ -8,7 +8,7 @@ def tcp_app():
     # 1
     # creating TCP sockets
 
-    port = 20529
+    port = 20530
     server_address = "127.0.0.1"
 
     tcp_app_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

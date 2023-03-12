@@ -95,7 +95,12 @@ def tcp_app_client():
 
     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    tcp_client_socket.connect(("127.0.0.1", 20529))
+     # making that the addr will not say "the addr is already in use"
+    tcp_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    tcp_client_socket.bind(("127.0.0.1", 20529))
+
+    tcp_client_socket.connect(("127.0.0.1", 20530))
 
     # We are creating a request to the server to give us a link to the oceans song
     request = "I want a picture".encode("utf-8")
@@ -381,7 +386,7 @@ if __name__ == "__main__":
 
     #dns_socket()
 
-    #tcp_app_client()
+    tcp_app_client()
 
-    udp_client()
+    #udp_client()
 
