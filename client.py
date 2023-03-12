@@ -101,7 +101,6 @@ def tcp_app_client():
     print("For Avengers-InfinityWar write 2")
     print("For Avengers-FirstAvenger write 3")
 
-
     input_choice = input("APP which poster movie do you want? pick 1 to 3! ")
 
     # Sending the request to the app_server
@@ -207,8 +206,44 @@ def udp_client():
     if input_choice == "Android":
         mod_choice = input("which model do you like? Galaxy S23 or Galaxy S22? ")
 
-    client_socket.sendto(mod_choice.encode("utf-8"), (app_address, app_port))
-    print("Sent to the Application the request")
+    # Send
+    while True:
+        try:
+            client_socket.sendto(mod_choice.encode("utf-8"), (app_address, app_port))
+            print("Sent to the Application the request")
+            break
+        except socket.timeout:
+            continue
+
+
+    # getting the response from the app if he got the request
+    while True:
+        try:
+            check_ack, app_addr = client_socket.recvfrom(4096)
+            check_ack = check_ack.decode("utf-8")
+        except socket.timeout:
+            continue
+        break
+
+    # checking what ack we received
+    while True:
+        if check_ack != "ACK":
+            print("Application didnt recv the request")
+            try:
+                client_socket.sendto(mod_choice.encode("utf-8"), (app_address, app_port))
+                print("Sent the request again!")
+            except socket.timeout:
+                continue
+        else:
+            print("Application got the request!")
+            send_ack_to_app = "ACK"
+            try:
+                client_socket.sendto(send_ack_to_app.encode("utf-8"), (app_address, app_port))
+                print("Sent Ack to Application that we recv that ACK from him")
+            except socket.timeout:
+                continue
+            break
+
 
     # segemnts is a dictionery because we don't know the order that the segments received in the application
     segments = {}
@@ -216,27 +251,48 @@ def udp_client():
     # -1 is like infinty we do it because we don't know how much segments will receive
     last_segment = -1
 
-    while last_segment == -1 or len(segments) <= last_segment:
+    # getting segments from app when we don't know how much segments we need to get (last_segment didn't change)
+    while last_segment == -1:
         try:
             segment_packet = client_socket.recvfrom(4096)[0]
             segment_packet = segment_packet.decode()
         except socket.error:
             continue
 
-        tag, seq_num_as_str, segment = segment_packet.split(',', 3)
-        seq_num = int(seq_num_as_str)
+        letter, seq_num_from_app, segment_data = segment_packet.split(',', 3)
+        seq_num = int(seq_num_from_app)
 
-        ack_packet = str(seq_num)
+        ack_packet_seq_num = str(seq_num)
 
-        client_socket.sendto(ack_packet.encode(), (app_address, app_port))
+        client_socket.sendto(ack_packet_seq_num.encode(), (app_address, app_port))
 
         if seq_num not in segments:
-            segments[seq_num] = segment
+            segments[seq_num] = segment_data
             print("Get segment number " + str(seq_num))
 
-        if tag == "E":
+        if letter == "E":
             last_segment = seq_num
 
+    # while to get all the packet after we got the last packet, and we know how much packet we need to get
+    while len(segments) <= last_segment:
+        try:
+            segment_packet = client_socket.recvfrom(4096)[0]
+            segment_packet = segment_packet.decode()
+        except socket.error:
+            continue
+
+        letter, seq_num_from_app, segment_data = segment_packet.split(',', 3)
+        seq_num = int(seq_num_from_app)
+
+        ack_packet_seq_num = str(seq_num)
+
+        client_socket.sendto(ack_packet_seq_num.encode(), (app_address, app_port))
+
+        if seq_num not in segments:
+            segments[seq_num] = segment_data
+            print("Get segment number " + str(seq_num))
+
+    # assemble the full data that we received from the app
     data = ""
     for i in range(last_segment + 1):
         data += segments[i]
@@ -270,13 +326,13 @@ def udp_client():
 
 # main
 if __name__ == "__main__":
-    dhcp_discover()
-    got_dhcp_offer()
-    got_dhcp_ack()
+    #dhcp_discover()
+    #got_dhcp_offer()
+    #got_dhcp_ack()
 
     #dns_socket()
 
     #tcp_app_client()
 
-    #udp_client()
+    udp_client()
 

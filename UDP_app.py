@@ -13,103 +13,248 @@ def udp_server():
     udp_app_socket.settimeout(5)
 
     # open a connection to the second server that have the object
-    img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    img_server_socket.connect(("127.0.0.1", 30553))
 
+    # to keep the server on
     while True:
-        try:
-            request_from_client, client_addr = udp_app_socket.recvfrom(4096)
-            print(f"connected to server {client_addr}")
-            break
-        except socket.error:
-            print("error")
-            pass
 
-    print("The model phone that the client choice is:", request_from_client)
+        # checking if we got the request
+        while True:
+            try:
+                request_from_client, client_addr = udp_app_socket.recvfrom(4096)
+                request_from_client = request_from_client.decode("utf-8")
+            except socket.error:
+                continue
 
-    print("I dont have what you want but i know the server that have this")
-    print("I will connect to this server")
+            if request_from_client == "Iphone 14":
+                print("Got the request")
+                got_the_request = "ACK"
+                while True:
+                    try:
+                        udp_app_socket.sendto(got_the_request.encode("utf-8"), client_addr)
+                        print("Sent ACK to the client")
+                        break
+                    except socket.timeout:
+                        continue
 
-    # Sending the request to the second server
-    img_server_socket.sendto(request_from_client, ("127.0.0.1", 30553))
-    print("Sent the request to the second server")
+                break
+            elif request_from_client == "Iphone 13":
+                print("Got the request")
+                got_the_request = "ACK"
+                while True:
+                    try:
+                        udp_app_socket.sendto(got_the_request.encode("utf-8"), client_addr)
+                        print("Sent ACK to the client")
+                        break
+                    except socket.timeout:
+                        continue
 
-    response_from_server = img_server_socket.recvfrom(4096)
-    url_response = response_from_server[0]
-    print("Got the response from the second Server")
+                break
+            elif request_from_client == "Galaxy S23":
+                print("Got the request")
+                got_the_request = "ACK"
+                while True:
+                    try:
+                        udp_app_socket.sendto(got_the_request.encode("utf-8"), client_addr)
+                        print("Sent ACK to the client")
+                        break
+                    except socket.timeout:
+                        continue
 
-    # CC algo reno
-    data = url_response.decode()
+                break
+            elif request_from_client == "Galaxy S22":
+                print("Got the request")
+                got_the_request = "ACK"
+                while True:
+                    try:
+                        udp_app_socket.sendto(got_the_request.encode("utf-8"), client_addr)
+                        print("Sent ACK to the client")
+                        break
+                    except socket.timeout:
+                        continue
 
-    # the code start now
+                break
+            else:
+                print("Didnt got the request")
+                didnt_got_the_reqest = "NACK"
+                udp_app_socket.sendto(didnt_got_the_reqest.encode("utf-8"), client_addr)
+                print("Sent the client that we didnt get the reuqest")
 
-    segment_size = 5
+        # end while
 
-    dataLen = len(data)
+        # waiting that the client tell us that he got ACK
+        while True:
+            try:
+                udp_app_socket.settimeout(10)  # 10 seconds
+                response_to_ack = udp_app_socket.recvfrom(4096)
+                response_to_ack = response_to_ack[0].decode("utf-8")
+                break
+            except socket.timeout:
+                continue
 
-    segments_count = int(dataLen / segment_size)
-    if segments_count * segment_size < dataLen:
-        segments_count += 1
+        while True:
+            if response_to_ack == "ACK":
+                print("Got ack, great!")
+                break
+            else:
+                continue
 
-    segments = {}  # dict that keep all segements
+        while True:
+            if response_to_ack == "ACK":
+                print("Got ack, great!")
+                break
+            else:
+                continue
 
-    # loop that fill the array with seq_num and data
-    i = 0
-    while i < segments_count - 1:
-        segments[i] = "M," + str(i) + "," + data[i*segment_size:(i+1) * segment_size]
-        i += 1
+        print("The model phone that the client choice is:", request_from_client)
 
-    segments[i] = "E," + str(i) + "," + data[i*segment_size:]
+        print("I dont have what you want but i know the server that have this")
+        print("I will connect to this server")
 
-    window_size = 1
-    # index array that keep the segments that going to send but didn't sent yet
-    segments_to_send = list(range(segments_count))
-    # index array that keep the segments that sending in this current window
-    segments_sending = []
+        # Sending the request to the second server
+        img_server_socket.send(request_from_client.encode("utf-8"))
+        print("Sent the request to the img server")
 
-    # the while
+        response_from_server = img_server_socket.recv(4096)
+        url_response = response_from_server
+        print("Got the response from the img Server")
 
-    while len(segments_to_send) > 0:
+       # Set up Reno congestion control parameters
+
+        cwnd = 1
+        ssthresh = 16
+        # dict that keep all segements
+        segments = {}
+
+
+        # Reno congestion control algorithm
+        url_data = url_response.decode()
+
+        segment_size = 5
+
+        url_data_length = len(url_data)
+
+        if url_data_length % segment_size > 0:
+            remind = 1
+        else:
+            remind = 0
+
+        num_segments = int(url_data_length / segment_size) + remind
+
+        ack_received = [False] * num_segments
+        dup_ack_index = [0] * num_segments
+
+        # loop that fill the dictionary with seq_num and data ?????
         i = 0
-        while i < window_size and len(segments_to_send) > 0:
-            seq_num = segments_to_send.pop(0)
-            segments_sending.append(seq_num)
-
-            packet = segments[seq_num]
-
-            print("Send Segment " + str(seq_num))
-
-            udp_app_socket.sendto(packet.encode(), ("127.0.0.1", 20530))
+        while i < num_segments:
+            index = str(i)
+            if i == num_segments - 1:
+                segments[i] = "E," + index + "," + url_data[i * segment_size:]
+                # index array that keep the segments that going to send but didn't send yet
+            else:
+                segments[i] = "S," + index + "," + url_data[i * segment_size: (i+1)*segment_size]
 
             i += 1
 
-        timeout = False
-        while len(segments_sending) > 0 and not timeout:
-            try:
-                ack_packet = udp_app_socket.recvfrom(4096)
-                seq_num = int(ack_packet[0].decode("utf-8"))
-                print("Get ACK for segment " + str(seq_num))
-                if seq_num in segments_sending:
-                    segments_sending.remove(seq_num)
-            except socket.error:
-                timeout = True
+        # Check if all segments have been acknowledged
+        while True:
+            # put all the segments that we didn't got ack on them(segments that not True in the ack_received array), back in the segment_to_send array
+            # index array that keep the segments that going to send but didn't send yet
+            segments_to_send = []
+            for i in range(num_segments):
+                if ack_received[i] == False:
+                    segments_to_send.append(i)
 
-        if timeout:
-            print("Decrease Window")
-            window_size = int(max(window_size / 2, 1))
-        else:
-            print("Increase Window")
-            window_size += 1
+            if len(segments_to_send) == 0:
+                print("received ack on every segments")
+                break
 
-        # put all the segments that we didn't got ack on them, we put the back in the segment_to_send array
-        # and empty the array of segments sending and do the while all again to send the segments that didnt get ack again
-        segments_to_send = segments_sending + segments_to_send
-        segments_sending = []
+            # Send new segments up to congestion window size
+            count_segment_that_sending = 0
+            while count_segment_that_sending < cwnd and len(segments_to_send) > 0:
+                seq_num = segments_to_send.pop(0)
+                udp_app_socket.sendto(segments[seq_num].encode(), client_addr)
+                print("Sent segment", seq_num)
+                count_segment_that_sending += 1
+
+            timeout = False
+            global ack_seq_num
+            ack_seq_num = 0
+            while count_segment_that_sending > 0:
+                # Receive acknowledgments
+                try:
+                    ack_data, addr = udp_app_socket.recvfrom(1024)
+                    ack_seq_num = int(ack_data.decode())
+                    print("Received ACK for segment", ack_seq_num)
+                    if not ack_received[ack_seq_num]:
+                        ack_received[ack_seq_num] = True
+                        count_segment_that_sending -= 1
+                        dup_ack_index[ack_seq_num] = dup_ack_index[ack_seq_num]+1
+
+                        # Update congestion window size using Reno algorithm
+                        if cwnd < ssthresh:
+                            cwnd *= 2
+                        else:
+                            cwnd += 1 / cwnd
+
+                        if ack_seq_num == seq_num and dup_ack_index[ack_seq_num] < 3:
+                            dup_ack_index[ack_seq_num] = dup_ack_index[ack_seq_num]+1
+                        elif ack_seq_num == seq_num and dup_ack_index[ack_seq_num] == 3:
+                            print("Fast Retransmit")
+                            ssthresh = max(int(cwnd/2), 1)
+                            cwnd = ssthresh + 3
+
+                            # reseting the seq_num that we got dup ack on him
+                            dup_ack_index[ack_seq_num] = 0
+
+                            # adding the 3 seq_num to send again
+                            for i in range(seq_num - 2, seq_num):
+                                segments_to_send.append(i)
+                            break
+
+                    # if we got ack on this seq_num already, so we check if we get 3 dup ack and do Fast retransmit
+                    else:
+
+                        if dup_ack_index[ack_seq_num] < 3:
+                            dup_ack_index[ack_seq_num] = dup_ack_index[ack_seq_num]+1
+                        elif dup_ack_index[ack_seq_num] == 3:
+                            print("Fast Retransmit")
+                            ssthresh = max(int(cwnd/2), 1)
+                            cwnd = ssthresh + 3
+
+                            # reseting the seq_num that we got dup ack on him
+                            dup_ack_index[ack_seq_num] = 0
+
+                            # adding the 3 seq_num to send again
+                            for i in range(seq_num - 2, seq_num):
+                                segments_to_send.append(i)
+                            break
+                        else:
+                            dup_ack_count = 0
+
+                except socket.timeout:
+                    print("Timeout waiting for ACK")
+                    timeout = True
+                    break
+
+            if timeout:
+                print("Decrease Window")
+                ssthresh = cwnd / 2
+                cwnd = 1
+            else:
+                print("Increase Window")
+                ssthresh = cwnd
+
 
     # end while
 
     # Closing sockets
     img_server_socket.close()
     udp_app_socket.close()
+
+
+#def sending_data_to_client():
 
 
 if __name__ == "__main__":
