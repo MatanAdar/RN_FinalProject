@@ -220,7 +220,7 @@ def udp_client():
 
     client_socket.bind(("127.0.0.1", 20530))
     client_socket.setblocking(True)
-    client_socket.settimeout(5)
+    client_socket.settimeout(10)
 
     print("hello! which phone do you want to get:")
     input_choice = input("Iphone or Android? ")
@@ -236,10 +236,14 @@ def udp_client():
     # 2
     # sending to the app the request and doing 3 handshake with him to see if he got the request
 
+    Max_window_size = 65535
+
+    request = mod_choice + "," + str(Max_window_size)
+
     # Send
     while True:
         try:
-            client_socket.sendto(mod_choice.encode("utf-8"), (app_address, app_port))
+            client_socket.sendto(request.encode("utf-8"), (app_address, app_port))
             print("Sent to the Application the request")
             break
         except socket.timeout:
@@ -377,7 +381,7 @@ if __name__ == "__main__":
 
     #dns_socket()
 
-    tcp_app_client()
+    #tcp_app_client()
 
-    #udp_client()
+    udp_client()
 
