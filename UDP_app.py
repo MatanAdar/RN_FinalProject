@@ -4,7 +4,7 @@ PORT = 20529
 APP_ADDRESS = "127.0.0.1"
 
 
-def udp_server():
+def udp_app():
 
     # ************************************************************************************************
 
@@ -274,7 +274,7 @@ def udp_server():
 
                             # adding the 3 seq_num to send again
                             for i in range(seq_num - 2, seq_num):
-                                segments_to_send.append(i)
+                                segments_unacked.append(i)
                             break
                         else:
                             dup_ack_count = 0
@@ -305,4 +305,4 @@ def udp_server():
 
 
 if __name__ == "__main__":
-    udp_server()
+    udp_app()
