@@ -228,7 +228,7 @@ def udp_client():
     if input_choice == "Iphone":
         mod_choice = input("which model do you like? Iphone 14 or Iphone 13?")
 
-    if input_choice == "Android":
+    elif input_choice == "Android":
         mod_choice = input("which model do you like? Galaxy S23 or Galaxy S22? ")
 
     # ***************************************************************************************
@@ -355,7 +355,7 @@ def udp_client():
         response = requests.get(new_url)
 
     # Check if the request was successful (HTTP status code 200)
-    if response.status_code == 200:
+    elif response.status_code == 200:
         # Open a local file with wb (write binary) permission.
         with open("Image.jpg", "wb") as file:
             # Write the contents of the response to the file.
