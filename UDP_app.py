@@ -20,7 +20,7 @@ def udp_app():
     udp_app_socket.bind((APP_ADDRESS, PORT))
 
     udp_app_socket.setblocking(True)
-    udp_app_socket.settimeout(5)
+    udp_app_socket.settimeout(10)
 
     # open a connection to the second server that have the object
     img_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,11 +29,17 @@ def udp_app():
     # to keep the server on
     while True:
 
-        # checking if we got the request
+        # checking if we got the request and getting the max_window_size_from_client to know what the max window size can we get to send
         while True:
             try:
-                request_from_client, client_addr = udp_app_socket.recvfrom(4096)
-                request_from_client = request_from_client.decode("utf-8")
+                request, client_addr = udp_app_socket.recvfrom(4096)
+                request = request.decode("utf-8")
+                request_from_client, max_window_size_from_client = request.split(",")
+
+                # max window sizee that the client send to tell the app that he cant send more then that size to him (Flow Control)
+                max_window_size_from_client = int(max_window_size_from_client)
+                print(request_from_client)
+                print(max_window_size_from_client)
             except socket.error:
                 continue
 
@@ -193,11 +199,13 @@ def udp_app():
         # 3.2.1 - adding the segments that didn't get ACK yet to the segments_unacked array
         # 3.2.2 - if the size of segments_unacked is 0 its mean that all the ack received array is True, and we got ACKs on all the segments we sent
         # 3.2.3 - if there still space in chwd(window size) we send to the client the segments until the chwd get full by poping from segments_unacked array and counting the amount segments we're sending
-        # 3.2.4 - receiving from the client the seq num segment that he got and checking if we got ACK on him already.
+        # 3.2.4 - receiving from the client the seq num segment that he got and checking if we got ACK on him already and implementing FLOW control here too.
         # if no we're changing ack_received[seq_num] = true and lower the amount of segments we sent and didn't get ack on them yet
         # if yes we're adding the seq_num ack to the array of dup ack, to check if we get 3 dup ack to know if we need to make Fast retransmitted
-        # if we got timeout (timeout waiting for ack) we're decreasing ssthresh to be chwd/2 and chwd to be 1
+        # 3.2.5 - if we got timeout (timeout waiting for ack) we're decreasing ssthresh to be chwd/2 and chwd to be 1
         # else we make the ssthresh to be like chwd
+        # notice that we implement FLow Control in this code because we check that the chwd will not be over the max window size that the client send us,
+        # and that will make that the app will send more than the client can handle and will not get Situation of "overflow"
 
         # Check if all segments have been acknowledged
         while True:
@@ -238,11 +246,12 @@ def udp_app():
                         count_segment_that_sending -= 1
                         dup_ack_index[ack_seq_num] = dup_ack_index[ack_seq_num]+1
 
-                        # Update congestion window size using Reno algorithm
-                        if cwnd < ssthresh:
+                        # Update congestion window size using Reno algorithm and implementing FLOW CONTROL
+                        if cwnd < ssthresh and cwnd < max_window_size_from_client:
                             cwnd *= 2
                         else:
-                            cwnd += 1 / cwnd
+                            if cwnd < max_window_size_from_client:
+                                cwnd += 1 / cwnd
 
                         if ack_seq_num == seq_num and dup_ack_index[ack_seq_num] < 3:
                             dup_ack_index[ack_seq_num] = dup_ack_index[ack_seq_num]+1
@@ -289,8 +298,9 @@ def udp_app():
                 ssthresh = cwnd / 2
                 cwnd = 1
             else:
-                print("Increase Window")
-                ssthresh = cwnd
+                if cwnd < max_window_size_from_client:
+                    print("Increase Window")
+                    ssthresh = cwnd
 
     # end while
 
