@@ -19,14 +19,14 @@ def img_server_tcp():
 
     server_socket.listen(3)
 
+    connection_socket, server_addr = server_socket.accept()
+
     # *******************************************************************************
 
     # 2
     # receiving the request from the app and sending the url_response to the app
 
     while True:
-
-        connection_socket, server_addr = server_socket.accept()
 
         request = connection_socket.recv(4096).decode("utf-8")
 
@@ -40,13 +40,13 @@ def img_server_tcp():
             connection_socket.sendall(url_EndGame.encode("utf-8"))
             print("Sent the file to the app server")
 
-        if request == "2":
+        elif request == "2":
             # get the img from the func get_image_InfinityWar
             url_InfinityWar = Get_Image_InfinityWar()
             connection_socket.sendall(url_InfinityWar.encode("utf-8"))
             print("Sent the file to the app server")
 
-        if request == "3":
+        elif request == "3":
             # get the img from the func get_image_ultron
             url_ultron = Get_Image_Ultron()
             connection_socket.sendall(url_ultron.encode("utf-8"))
