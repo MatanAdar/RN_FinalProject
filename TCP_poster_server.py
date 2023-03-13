@@ -20,6 +20,8 @@ def img_server_tcp():
     server_socket.listen(3)
 
     connection_socket, server_addr = server_socket.accept()
+    print(f"connected to server {server_addr}")
+
 
     # *******************************************************************************
 

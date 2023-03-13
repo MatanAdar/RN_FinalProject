@@ -161,6 +161,7 @@ def udp_app():
         url_data = url_response.decode()
 
         # calc the amount of segments app need to send to client to transfer all the data(url) to him
+        # making that each segment will not weigh over 64kb
         segment_size = 5
 
         url_data_length = len(url_data)
@@ -170,6 +171,7 @@ def udp_app():
         else:
             remind = 0
 
+        # the amount of segments we need to send to not weigh over 64kb for each segment
         num_segments = int(url_data_length / segment_size) + remind
 
         # boolean array that tell us what seq num of segments got ot the client

@@ -1,5 +1,4 @@
 import socket
-from scapy.all import *
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 from scapy.layers.inet import IP, UDP
 
@@ -10,11 +9,12 @@ from scapy.all import *
 from scapy.layers.l2 import Ether
 
 
+
 # Set the interface to listen and respond on
 net_interface = "lo"
 
 # Packet Filter for sniffing specific DNS packet only
-packet_filter = "udp dst port 53"       # Filter UDP port 53
+packet_filter = "udp port 53"       # Filter UDP port 53
 
 # Function that replies to DNS query
 # Create a collection to serve as the cache
@@ -25,13 +25,15 @@ def dns_reply(packet):
     # Get the domain name from the DNS query
     domain_name = packet[DNSQR].qname.decode('utf-8')
 
+    print(domain_name)
+
     # Check if the domain name is in the cache
     if domain_name in dns_cache:
         print('domain is in cache')
         ip_address = dns_cache[domain_name]
     else:
         # Perform a DNS lookup for the domain name
-        dns_res = sr1(IP(dst='213.57.22.5')/UDP()/DNS(rd=1, qd=DNSQR(qname=domain_name)), verbose=0)
+        dns_res = sr1(IP(dst='8.8.8.8')/UDP()/DNS(rd=1, qd=DNSQR(qname=domain_name)), verbose=0)
 
         # Extract the IP address from the DNS response
         ip_address = dns_res[DNSRR].rdata

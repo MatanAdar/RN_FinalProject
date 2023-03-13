@@ -8,6 +8,7 @@ from scapy.layers.l2 import Ether
 from scapy.sendrecv import sendp
 import requests
 from PIL import Image
+import random
 
 
 global client_ip_from_server
@@ -18,7 +19,7 @@ def dhcp_discover():
     dhcp_discover1 = Ether(dst="ff:ff:ff:ff:ff") / \
                     IP(src='0.0.0.0', dst='255.255.255.255') / \
                     UDP(sport=68, dport=67) / \
-                    BOOTP(op=1, chaddr="4a:e4:66:e8:7a:00", xid=23567342) / \
+                    BOOTP(op=1, chaddr="4a:e4:66:e8:7a:00", xid=random.randint(1, 0XFFFFFFFF)) / \
                     DHCP(options=[("message-type", "discover"), "end"])
 
     # send DHCP discover to the server
@@ -72,18 +73,18 @@ def got_dhcp_ack():
 
 
 def dns_socket():
+    domain=input('enter domain name : ')
+    # Create a DNS query packet
+    dns_query_packet = IP(dst="127.0.0.1") / UDP(dport=53) / DNS(rd=1, qd=DNSQR(qname=domain))
 
-    dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # Send the DNS query packet and get the response
+    dns_response_packet = sr1(dns_query_packet)
 
-    input_domain = input("DNS please input a domain:")
+    # Print the resolved IP address if the DNS query was successful
+    if dns_response_packet.haslayer(DNS):
+        print(dns_response_packet[DNSRR].rdata)
 
-    dns_sock.sendto(input_domain.encode("utf-8"), ("127.0.0.1", 53))
 
-    ip_address = dns_sock.recvfrom(4096)
-
-    print("the ip of the address is:", ip_address[0].decode("utf-8"))  #because the ip_address we get from the server its a tuple
-
-    dns_sock.close()
 
 
 
@@ -241,7 +242,7 @@ def udp_client():
     # 2
     # sending to the app the request and doing 3 handshake with him to see if he got the request
 
-    Max_window_size = 65535
+    Max_window_size = 16384
 
     request = mod_choice + "," + str(Max_window_size)
 
@@ -258,6 +259,7 @@ def udp_client():
     # getting the response from the app if he got the request
     while True:
         try:
+            client_socket.settimeout(10)
             check_ack, app_addr = client_socket.recvfrom(4096)
             check_ack = check_ack.decode("utf-8")
         except socket.timeout:
@@ -295,6 +297,7 @@ def udp_client():
     last_segment = -1
 
     # getting segments from app when we don't know how much segments we need to get (last_segment didn't change)
+    # each segment don't go over a 64kb
     while last_segment == -1:
         try:
             segment_packet = client_socket.recvfrom(4096)[0]
@@ -384,9 +387,9 @@ if __name__ == "__main__":
     #got_dhcp_offer()
     #got_dhcp_ack()
 
-    #dns_socket()
+    dns_socket()
 
-    tcp_app_client()
+    #tcp_app_client()
 
     #udp_client()
 

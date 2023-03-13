@@ -22,6 +22,9 @@ def tcp_app():
 
     # open a connection to the second server that have the object
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    server_socket.bind(("127.0.0.1", 30555))
+
     server_socket.connect(("127.0.0.1", 30553))
 
     while True:
