@@ -10,6 +10,9 @@ import requests
 from PIL import Image
 import random
 
+# *****************************************************************************
+
+# DHCP
 
 global client_ip_from_server
 
@@ -62,6 +65,7 @@ def got_dhcp_offer():
         sendp(dhcp_request)
 
 
+
 def got_dhcp_ack():
 
     pkt = sniff(filter="udp and port 68", count=1, iface="enp0s3")[0]  #got the pkt in the spot 0
@@ -71,7 +75,9 @@ def got_dhcp_ack():
 
         print("so my ip address is:", client_ip_from_server)
 
+# ************************************************************************************************
 
+# DNS
 def dns_socket():
     domain=input('enter domain name : ')
     # Create a DNS query packet
@@ -85,9 +91,9 @@ def dns_socket():
         print(dns_response_packet[DNSRR].rdata)
 
 
+# ************************************************************************************
 
-
-
+# TCP
 def tcp_app_client():
 
     # *************************************************************************************
@@ -206,6 +212,9 @@ def tcp_app_client():
 
     tcp_client_socket.close()
 
+# **************************************************************************************************
+
+# RUDP
 
 def udp_client():
 
